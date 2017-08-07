@@ -106,6 +106,17 @@ class AdditionalMessagePropertiesMessage(messages.Message):
         'AdditionalProperty', 1, repeated=True)
 
 
+@encoding.MapUnrecognizedFields('additional_properties')
+class AdditionalBytesPropertiesMessage(messages.Message):
+
+    class AdditionalProperty(messages.Message):
+        key = messages.StringField(1)
+        value = messages.BytesField(2)
+
+    additional_properties = messages.MessageField(
+        'AdditionalProperty', 1, repeated=True)
+
+
 class HasNestedMessage(messages.Message):
     nested = messages.MessageField(AdditionalPropertiesMessage, 1)
     nested_list = messages.StringField(2, repeated=True)
@@ -236,6 +247,19 @@ class EncodingTest(unittest2.TestCase):
         new_msg.additional_properties.pop()
         self.assertEqual(1, len(new_msg.additional_properties))
         self.assertEqual(2, len(msg.additional_properties))
+
+    def testBytesPropertyValue(self):
+        value = 'himom'
+        json_msg = '{"key_one": "aGltb20="}'
+        msg = encoding.JsonToMessage(AdditionalBytesPropertiesMessage,
+                                     json_msg)
+        self.assertEqual(
+            AdditionalBytesPropertiesMessage(
+                additional_properties=[
+                    AdditionalBytesPropertiesMessage.AdditionalProperty(
+                        key='key_one', value=value)]),
+            msg)
+        encoding.MessageToDict(msg)
 
     def testNumericPropertyName(self):
         json_msg = '{"nested": {"123": "def"}}'
